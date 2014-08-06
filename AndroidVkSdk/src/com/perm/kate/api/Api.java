@@ -16,7 +16,7 @@ import com.perm.utils.WrongResponseCodeException;
 import android.util.Log;
 
 public class Api {
-    static final String TAG="Kate.Api";
+    protected static final String TAG="Kate.Api";
     
     public static final String BASE_URL="https://api.vk.com/method/";
     public static final String API_VERSION="5.5";
@@ -37,7 +37,7 @@ public class Api {
     static boolean enable_compression=true;
     
     /*** utils methods***/
-    private void checkError(JSONObject root, String url) throws JSONException,KException {
+    protected void checkError(JSONObject root, String url) throws JSONException,KException {
         if(!root.isNull("error")){
             JSONObject error=root.getJSONObject("error");
             int code=error.getInt("error_code");
@@ -102,7 +102,7 @@ public class Api {
         return root;
     }
 
-    private void processNetworkException(int i, IOException ex) throws IOException {
+    protected void processNetworkException(int i, IOException ex) throws IOException {
         ex.printStackTrace();
         if(i==MAX_TRIES)
             throw ex;
