@@ -17,32 +17,32 @@ import android.util.Log;
 
 public class Api {
     protected static final String TAG="Kate.Api";
-    
+
     public static final String BASE_URL="https://api.vk.com/method/";
     public static final String API_VERSION="5.5";
-    
+
     public Api(String access_token, String api_id){
         this.access_token=access_token;
         this.api_id=api_id;
     }
-    
+
     public void setAccessToken(String access_token){
         this.access_token=access_token;
     }
-    
+
     String access_token;
     String api_id;
-    
+
     //TODO: it's not faster, even slower on slow devices. Maybe we should add an option to disable it. It's only good for paid internet connection.
     static boolean enable_compression=true;
-    
+
     /*** utils methods***/
     protected void checkError(JSONObject root, String url) throws JSONException,KException {
         if(!root.isNull("error")){
             JSONObject error=root.getJSONObject("error");
             int code=error.getInt("error_code");
             String message=error.getString("error_msg");
-            KException e = new KException(code, message, url); 
+            KException e = new KException(code, message, url);
             if (code==14) {
                 e.captcha_img = error.optString("captcha_img");
                 e.captcha_sid = error.optString("captcha_sid");
@@ -59,7 +59,7 @@ public class Api {
             JSONObject error=errors.getJSONObject(0);
             int code=error.getInt("error_code");
             String message=error.getString("error_msg");
-            KException e = new KException(code, message, url); 
+            KException e = new KException(code, message, url);
             if (code==14) {
                 e.captcha_img = error.optString("captcha_img");
                 e.captcha_sid = error.optString("captcha_sid");
@@ -69,11 +69,11 @@ public class Api {
             throw e;
         }
     }
-    
+
     private JSONObject sendRequest(Params params) throws IOException, JSONException, KException {
         return sendRequest(params, false);
     }
-    
+
     private final static int MAX_TRIES=3;
     private JSONObject sendRequest(Params params, boolean is_post) throws IOException, JSONException, KException {
         String url = getSignedUrl(params, is_post);
@@ -141,29 +141,29 @@ public class Api {
                 connection.disconnect();
         }
     }
-    
+
     private String getSignedUrl(Params params, boolean is_post) {
         params.put("access_token", access_token);
-        if(!params.contains("v"))
-            params.put("v", API_VERSION);
-        
+        //if(!params.contains("v"))
+        //    params.put("v", API_VERSION);
+
         String args = "";
         if(!is_post)
             args=params.getParamsString();
-        
+
         return BASE_URL+params.method_name+"?"+args;
     }
-    
+
     public static String unescape(String text){
         if(text==null)
             return null;
         return text.replace("&amp;", "&").replace("&quot;", "\"").replace("<br>", "\n").replace("&gt;", ">").replace("&lt;", "<")
-        .replace("<br/>", "\n").replace("&ndash;","-").trim();
+                .replace("<br/>", "\n").replace("&ndash;","-").trim();
         //Баг в API
         //amp встречается в сообщении, br в Ответах тип comment_photo, gt lt на стене - баг API, ndash в статусе когда аудио транслируется
         //quot в тексте сообщения из LongPoll - то есть в уведомлении
     }
-    
+
     public static String unescapeWithSmiles(String text){
         return unescape(text)
                 //May be useful to someone
@@ -214,7 +214,7 @@ public class Api {
         JSONObject root = sendRequest(params);
         JSONObject response=root.optJSONObject("response");
         JSONArray array=response.optJSONArray("items");
-        ArrayList<City> cities = new ArrayList<City>(); 
+        ArrayList<City> cities = new ArrayList<City>();
         if (array != null) {
             for (int i=0; i<array.length(); i++){
                 JSONObject o = (JSONObject)array.get(i);
@@ -233,7 +233,7 @@ public class Api {
         params.put("city_ids",arrayToString(cids));
         JSONObject root = sendRequest(params);
         JSONArray array=root.optJSONArray("response");
-        ArrayList<City> cities=new ArrayList<City>(); 
+        ArrayList<City> cities=new ArrayList<City>();
         if(array!=null){
             for(int i=0; i<array.length(); i++){
                 JSONObject o = (JSONObject)array.get(i);
@@ -255,7 +255,7 @@ public class Api {
         }
         return str_cids;
     }
-    
+
     //http://vk.com/dev/database.getCountries
     public ArrayList<Country> getCountriesByCode(Integer need_full, String code) throws IOException, JSONException, KException {
         Params params = new Params("database.getCountries");
@@ -266,7 +266,7 @@ public class Api {
         JSONObject root = sendRequest(params);
         JSONObject response=root.optJSONObject("response");
         JSONArray array=response.optJSONArray("items");
-        ArrayList<Country> countries = new ArrayList<Country>(); 
+        ArrayList<Country> countries = new ArrayList<Country>();
         int category_count = array.length();
         for (int i=0; i<category_count; i++) {
             JSONObject o = (JSONObject)array.get(i);
@@ -275,7 +275,7 @@ public class Api {
         }
         return countries;
     }
-    
+
     //http://vk.com/dev/database.getCountriesById
     public ArrayList<Country> getCountries(Collection<Long> cids) throws IOException, JSONException, KException {
         if (cids == null || cids.size() == 0)
@@ -285,7 +285,7 @@ public class Api {
         params.put("country_ids",str_cids);
         JSONObject root = sendRequest(params);
         JSONArray array=root.getJSONArray("response");
-        ArrayList<Country> countries=new ArrayList<Country>(); 
+        ArrayList<Country> countries=new ArrayList<Country>();
         int category_count = array.length();
         for(int i=0; i<category_count; i++){
             JSONObject o = (JSONObject)array.get(i);
@@ -322,11 +322,11 @@ public class Api {
         params.put("fields",fields);
         params.put("user_id",user_id);
         params.put("list_id", lid);
-        
+
         //сортировка по популярности не даёт запросить друзей из списка
         if(lid==null)
             params.put("order","hints");
-        
+
         addCaptchaParams(captcha_key, captcha_sid, params);
         JSONObject root = sendRequest(params);
         ArrayList<User> users=new ArrayList<User>();
@@ -343,7 +343,7 @@ public class Api {
         }
         return users;
     }
-    
+
     //http://vk.com/dev/friends.getOnline
     public ArrayList<Long> getOnlineFriends(Long uid) throws IOException, JSONException, KException{
         Params params = new Params("friends.getOnline");
@@ -361,7 +361,7 @@ public class Api {
         }
         return users;
     }
-    
+
     //http://vk.com/dev/likes.getList
     public ArrayList<Long> getLikeUsers(String item_type, long item_id, long owner_id, String filter) throws IOException, JSONException, KException{
         Params params = new Params("likes.getList");
@@ -402,7 +402,7 @@ public class Api {
         }
         return users;
     }
-    
+
     /*** methods for photos ***/
     //http://vk.com/dev/photos.getAlbums
     public ArrayList<Album> getAlbums(Long oid, Collection<Long> aids, Integer need_system, Integer need_covers, Integer photo_sizes) throws IOException, JSONException, KException{
@@ -418,7 +418,7 @@ public class Api {
         JSONArray array=response.optJSONArray("items");
         if (array == null)
             return albums;
-        int category_count=array.length(); 
+        int category_count=array.length();
         for (int i=0; i<category_count; ++i) {
             JSONObject o = (JSONObject)array.get(i);
             Album a = Album.parse(o);
@@ -428,7 +428,7 @@ public class Api {
         }
         return albums;
     }
-    
+
     //http://vk.com/dev/photos.get
     public ArrayList<Photo> getPhotos(Long uid, Long aid, Integer offset, Integer count, boolean rev) throws IOException, JSONException, KException{
         Params params = new Params("photos.get");
@@ -443,11 +443,11 @@ public class Api {
         JSONObject response=root.optJSONObject("response");
         JSONArray array=response.optJSONArray("items");
         if (array == null)
-            return new ArrayList<Photo>(); 
+            return new ArrayList<Photo>();
         ArrayList<Photo> photos = parsePhotos(array);
         return photos;
     }
-    
+
     //http://vk.com/dev/photos.getUserPhotos
     public ArrayList<Photo> getUserPhotos(Long uid, Integer offset, Integer count) throws IOException, JSONException, KException{
         Params params = new Params("photos.getUserPhotos");
@@ -460,7 +460,7 @@ public class Api {
         JSONObject response=root.optJSONObject("response");
         JSONArray array=response.optJSONArray("items");
         if (array == null)
-            return new ArrayList<Photo>(); 
+            return new ArrayList<Photo>();
         ArrayList<Photo> photos = parsePhotos(array);
         return photos;
     }
@@ -476,11 +476,11 @@ public class Api {
         JSONObject response=root.optJSONObject("response");
         JSONArray array=response.optJSONArray("items");
         if (array == null)
-            return new ArrayList<Photo>(); 
+            return new ArrayList<Photo>();
         ArrayList<Photo> photos = parsePhotos(array);
         return photos;
     }
-    
+
     //http://vk.com/dev/photos.getComments
     public CommentList getPhotoComments(Long pid, Long owner_id, int offset, int count) throws IOException, JSONException, KException{
         Params params = new Params("photos.getComments");
@@ -505,7 +505,7 @@ public class Api {
         }
         return commnets;
     }
-    
+
     //http://vk.com/dev/notes.getComments
     public CommentList getNoteComments(Long nid, Long owner_id, int offset, int count) throws IOException, JSONException, KException{
         Params params = new Params("notes.getComments");
@@ -528,7 +528,7 @@ public class Api {
         }
         return commnets;
     }
-    
+
     //http://vk.com/dev/video.getComments
     public CommentList getVideoComments(long video_id, Long owner_id, int offset, int count) throws IOException, JSONException, KException{
         Params params = new Params("video.getComments");
@@ -552,7 +552,7 @@ public class Api {
         }
         return commnets;
     }
-    
+
     //http://vk.com/dev/photos.getAllComments
     public ArrayList<Comment> getAllPhotoComments(Long owner_id, Long album_id, int offset, int count) throws IOException, JSONException, KException{
         Params params = new Params("photos.getAllComments");
@@ -581,7 +581,7 @@ public class Api {
         //}
         return commnets;
     }
-    
+
     //http://vk.com/dev/photos.createComment
     public long createPhotoComment(Long pid, Long owner_id, String message, Long reply_to_cid, Collection<String> attachments, boolean from_group, String captcha_key, String captcha_sid) throws IOException, JSONException, KException{
         Params params = new Params("photos.createComment");
@@ -597,7 +597,7 @@ public class Api {
         long message_id = root.optLong("response");
         return message_id;
     }
-    
+
     //http://vk.com/dev/photos.editComment
     public boolean editPhotoComment(long cid, long pid, Long owner_id, String message, Collection<String> attachments, String captcha_key, String captcha_sid) throws IOException, JSONException, KException{
         Params params = new Params("photos.editComment");
@@ -611,7 +611,7 @@ public class Api {
         int response = root.optInt("response");
         return response == 1;
     }
-    
+
     //http://vk.com/dev/notes.createComment
     public long createNoteComment(Long nid, Long owner_id, String message, String captcha_key, String captcha_sid) throws IOException, JSONException, KException{
         Params params = new Params("notes.createComment");
@@ -625,7 +625,7 @@ public class Api {
         long message_id = root.optLong("response");
         return message_id;
     }
-    
+
     //http://vk.com/dev/notes.editComment
     public boolean editNoteComment(long cid, Long owner_id, String message, String captcha_key, String captcha_sid) throws IOException, JSONException, KException{
         Params params = new Params("notes.editComment");
@@ -637,7 +637,7 @@ public class Api {
         int response = root.optInt("response");
         return response == 1;
     }
-    
+
     //http://vk.com/dev/video.createComment
     public long createVideoComment(Long video_id, Long owner_id, String message, Collection<String> attachments, boolean from_group, String captcha_key, String captcha_sid) throws IOException, JSONException, KException{
         Params params = new Params("video.createComment");
@@ -652,7 +652,7 @@ public class Api {
         long message_id = root.optLong("response");
         return message_id;
     }
-    
+
     //http://vk.com/dev/video.editComment
     public boolean editVideoComment(long cid, Long owner_id, String message, Collection<String> attachments, String captcha_key, String captcha_sid) throws IOException, JSONException, KException{
         Params params = new Params("video.editComment");
@@ -665,7 +665,7 @@ public class Api {
         int response = root.optInt("response");
         return response == 1;
     }
-    
+
     private void addCaptchaParams(String captcha_key, String captcha_sid, Params params) {
         params.put("captcha_sid",captcha_sid);
         params.put("captcha_key",captcha_key);
@@ -689,7 +689,7 @@ public class Api {
         ArrayList<Message> messages = parseMessages(array, false, 0, false, 0);
         return messages;
     }
-    
+
     //http://vk.com/dev/messages.getHistory
     public ArrayList<Message> getMessagesHistory(long uid, long chat_id, long me, Long offset, int count) throws IOException, JSONException, KException{
         Params params = new Params("messages.getHistory");
@@ -706,7 +706,7 @@ public class Api {
         ArrayList<Message> messages = parseMessages(array, chat_id<=0, uid, chat_id>0, me);
         return messages;
     }
-    
+
     //http://vk.com/dev/messages.getDialogs
     public ArrayList<Message> getMessagesDialogs(long offset, int count, String captcha_key, String captcha_sid) throws IOException, JSONException, KException{
         Params params = new Params("messages.getDialogs");
@@ -745,7 +745,7 @@ public class Api {
             params.put("chat_id", chat_id);
         params.put("message", message);
         params.put("title", title);
-        params.put("type", type); 
+        params.put("type", type);
         params.put("attachment", arrayToString(attachments));
         params.put("forward_messages", arrayToString(forward_messages));
         params.put("lat", lat);
@@ -784,7 +784,7 @@ public class Api {
         //не парсим ответ - там приходят отдельные флаги для каждого удалённого сообщения
         return null;
     }
-    
+
     /*** for status***/
     //http://vk.com/dev/status.get
     public VkStatus getStatus(Long uid) throws IOException, JSONException, KException{
@@ -796,7 +796,7 @@ public class Api {
         if (obj != null) {
             status.text = unescape(obj.getString("text"));
             JSONObject jaudio = obj.optJSONObject("audio");
-            if (jaudio != null) 
+            if (jaudio != null)
                 status.audio = Audio.parse(jaudio);
         }
         return status;
@@ -855,7 +855,7 @@ public class Api {
         JSONObject root = sendRequest(params);
         return Newsfeed.parse(root, false);
     }
-    
+
     //http://vk.com/dev/newsfeed.getRecommended
     public Newsfeed getRecommendedNews(Long start_time, long count, Long end_time, Integer offset, String from, Integer max_photos, String captcha_key, String captcha_sid) throws IOException, JSONException, KException{
         Params params = new Params("newsfeed.getRecommended");
@@ -896,7 +896,7 @@ public class Api {
         JSONArray array=response.optJSONArray("items");
         return parseAudioList(array);
     }
-    
+
     //http://vk.com/dev/audio.getById
     public ArrayList<Audio> getAudioById(String audios, String captcha_key, String captcha_sid) throws IOException, JSONException, KException{
         Params params = new Params("audio.getById");
@@ -906,7 +906,7 @@ public class Api {
         JSONArray array=root.optJSONArray("response");
         return parseAudioList(array);
     }
-    
+
     //http://vk.com/dev/audio.getLyrics
     public String getLyrics(Long id) throws IOException, JSONException, KException{
         Params params = new Params("audio.getLyrics");
@@ -915,7 +915,7 @@ public class Api {
         JSONObject response = root.optJSONObject("response");
         return response.optString("text");
     }
-    
+
     /*** for video ***/
     //http://vk.com/dev/video.get
     public ArrayList<Video> getVideo(String videos, Long owner_id, Long album_id, String width, Long count, Long offset, String access_key) throws IOException, JSONException, KException{
@@ -942,7 +942,7 @@ public class Api {
         }
         return videoss;
     }
-    
+
     //http://vk.com/dev/video.getUserVideos
     public ArrayList<Video> getUserVideo(Long user_id) throws IOException, JSONException, KException{
         Params params = new Params("video.getUserVideos");
@@ -954,13 +954,13 @@ public class Api {
         ArrayList<Video> videos = new ArrayList<Video>();
         if (array != null) {
             for(int i = 0; i<array.length(); ++i) {
-                JSONObject o = (JSONObject)array.get(i); 
+                JSONObject o = (JSONObject)array.get(i);
                 videos.add(Video.parse(o));
             }
         }
         return videos;
     }
-    
+
     /*** for crate album ***/
     //http://vk.com/dev/photos.createAlbum
     public Album createAlbum(String title, Long gid, String privacy, String comment_privacy, String description) throws IOException, JSONException, KException {
@@ -973,10 +973,10 @@ public class Api {
         JSONObject root = sendRequest(params);
         JSONObject o = root.optJSONObject("response");
         if (o == null)
-            return null; 
+            return null;
         return Album.parse(o);
     }
-    
+
     //http://vk.com/dev/photos.editAlbum
     public String editAlbum(long aid, Long oid, String title, String privacy, String comment_privacy, String description) throws IOException, JSONException, KException {
         Params params = new Params("photos.editAlbum");
@@ -992,7 +992,7 @@ public class Api {
             return String.valueOf(response_code);
         return null;
     }
-    
+
     /*** for notes ***/
     //http://vk.com/dev/notes.get
     public ArrayList<Note> getNotes(Long uid, Collection<Long> nids, String sort, Long count, Long offset) throws IOException, JSONException, KException {
@@ -1036,7 +1036,7 @@ public class Api {
         JSONObject response = root.getJSONObject("response");
         return response.getString("upload_url");
     }
-    
+
     //http://vk.com/dev/photos.getWallUploadServer
     public String photosGetWallUploadServer(Long user_id, Long group_id) throws IOException, JSONException, KException {
         Params params = new Params("photos.getWallUploadServer");
@@ -1046,7 +1046,7 @@ public class Api {
         JSONObject response = root.getJSONObject("response");
         return response.getString("upload_url");
     }
-    
+
     //http://vk.com/dev/audio.getUploadServer
     public String getAudioUploadServer() throws IOException, JSONException, KException {
         Params params = new Params("audio.getUploadServer");
@@ -1054,7 +1054,7 @@ public class Api {
         JSONObject response = root.getJSONObject("response");
         return response.getString("upload_url");
     }
-    
+
     //http://vk.com/dev/photos.getMessagesUploadServer
     public String photosGetMessagesUploadServer() throws IOException, JSONException, KException {
         Params params = new Params("photos.getMessagesUploadServer");
@@ -1062,7 +1062,7 @@ public class Api {
         JSONObject response = root.getJSONObject("response");
         return response.getString("upload_url");
     }
-    
+
     //http://vk.com/dev/photos.getProfileUploadServer
     public String photosGetProfileUploadServer() throws IOException, JSONException, KException {
         Params params = new Params("photos.getProfileUploadServer");
@@ -1070,7 +1070,7 @@ public class Api {
         JSONObject response = root.getJSONObject("response");
         return response.getString("upload_url");
     }
-    
+
     //http://vk.com/dev/photos.save
     public ArrayList<Photo> photosSave(String server, String photos_list, Long aid, Long group_id, String hash, String caption) throws IOException, JSONException, KException {
         Params params = new Params("photos.save");
@@ -1085,7 +1085,7 @@ public class Api {
         ArrayList<Photo> photos = parsePhotos(array);
         return photos;
     }
-    
+
     //http://vk.com/dev/photos.saveWallPhoto
     public ArrayList<Photo> saveWallPhoto(String server, String photo, String hash, Long user_id, Long group_id) throws IOException, JSONException, KException {
         Params params = new Params("photos.saveWallPhoto");
@@ -1099,7 +1099,7 @@ public class Api {
         ArrayList<Photo> photos = parsePhotos(array);
         return photos;
     }
-    
+
     //http://vk.com/dev/audio.save
     public Audio saveAudio(String server, String audio, String hash, String artist, String title) throws IOException, JSONException, KException {
         Params params = new Params("audio.save");
@@ -1112,7 +1112,7 @@ public class Api {
         JSONObject response=root.getJSONObject("response");
         return Audio.parse(response);
     }
-    
+
     //http://vk.com/dev/photos.saveMessagesPhoto
     public ArrayList<Photo> saveMessagesPhoto(String server, String photo, String hash) throws IOException, JSONException, KException {
         Params params = new Params("photos.saveMessagesPhoto");
@@ -1124,7 +1124,7 @@ public class Api {
         ArrayList<Photo> photos = parsePhotos(array);
         return photos;
     }
-    
+
     //http://vk.com/dev/photos.saveProfilePhoto
     public String[] saveProfilePhoto(String server, String photo, String hash) throws IOException, JSONException, KException {
         Params params = new Params("photos.saveProfilePhoto");
@@ -1140,8 +1140,8 @@ public class Api {
     }
 
     private ArrayList<Photo> parsePhotos(JSONArray array) throws JSONException {
-        ArrayList<Photo> photos=new ArrayList<Photo>(); 
-        int category_count=array.length(); 
+        ArrayList<Photo> photos=new ArrayList<Photo>();
+        int category_count=array.length();
         for(int i=0; i<category_count; ++i){
             JSONObject o = (JSONObject)array.get(i);
             Photo p = Photo.parse(o);
@@ -1149,7 +1149,7 @@ public class Api {
         }
         return photos;
     }
-    
+
     //http://vk.com/dev/wall.addComment
     public long createWallComment(Long owner_id, Long post_id, String text, Long reply_to_cid, Collection<String> attachments, boolean from_group, String captcha_key, String captcha_sid) throws IOException, JSONException, KException{
         Params params = new Params("wall.addComment");
@@ -1166,7 +1166,7 @@ public class Api {
         long cid = response.optLong("comment_id");
         return cid;
     }
-    
+
     //http://vk.com/dev/wall.editComment 
     public boolean editWallComment(long cid, Long owner_id, String text, Collection<String> attachments, String captcha_key, String captcha_sid) throws IOException, JSONException, KException{
         Params params = new Params("wall.editComment");
@@ -1179,14 +1179,18 @@ public class Api {
         int response = root.optInt("response");
         return response == 1;
     }
-    
+
     //http://vk.com/dev/wall.post
     public long createWallPost(long owner_id, String text, Collection<String> attachments, String export, boolean only_friends, boolean from_group, boolean signed, String lat, String lon, Long publish_date, Long post_id, String captcha_key, String captcha_sid) throws IOException, JSONException, KException{
         Params params = new Params("wall.post");
-        params.put("owner_id", owner_id);
-        params.put("attachments", arrayToString(attachments));
-        params.put("lat", lat);
-        params.put("long", lon);
+        if (owner_id != 0)
+            params.put("owner_id", owner_id);
+        if (attachments != null)
+            params.put("attachments", arrayToString(attachments));
+        if (lat != null)
+            params.put("lat", lat);
+        if (lon != null)
+            params.put("long", lon);
         params.put("message", text);
         if(export!=null && export.length()!=0)
             params.put("services",export);
@@ -1196,10 +1200,12 @@ public class Api {
             params.put("friends_only","1");
         if (signed)
             params.put("signed","1");
-        params.put("publish_date", publish_date);
+        if (publish_date != 0)
+            params.put("publish_date", publish_date);
         if (post_id > 0)
             params.put("post_id", post_id);
-        addCaptchaParams(captcha_key, captcha_sid, params);
+        if (captcha_key != null)
+            addCaptchaParams(captcha_key, captcha_sid, params);
         JSONObject root = sendRequest(params, true);
         JSONObject response = root.getJSONObject("response");
         long res_post_id = response.optLong("post_id");
@@ -1215,13 +1221,13 @@ public class Api {
         addCaptchaParams(captcha_key, captcha_sid, params);
         JSONObject root = sendRequest(params);
         JSONObject response = root.getJSONObject("response");
-        WallMessage wall=new WallMessage(); 
+        WallMessage wall=new WallMessage();
         wall.id = response.optLong("post_id");
         wall.like_count=response.optInt("likes_count");
         wall.reposts_count=response.optInt("reposts_count");
         return wall;
     }
-    
+
     //http://vk.com/dev/wall.getComments
     public CommentList getWallComments(Long owner_id, Long post_id, int offset, int count, boolean reverse_order) throws IOException, JSONException, KException{
         Params params = new Params("wall.getComments");
@@ -1251,7 +1257,7 @@ public class Api {
             commnets.comments.add(Comment.parse((JSONObject)array.get(i)));
         return commnets;
     }
-    
+
     //http://vk.com/dev/audio.search
     public ArrayList<Audio> searchAudio(String q, String sort, String lyrics, Long count, Long offset, String captcha_key, String captcha_sid) throws IOException, JSONException, KException{
         Params params = new Params("audio.search");
@@ -1279,7 +1285,7 @@ public class Api {
         }
         return audios;
     }
-    
+
     //http://vk.com/dev/audio.delete
     public String deleteAudio(Long aid, Long oid) throws IOException, JSONException, KException{
         Params params = new Params("audio.delete");
@@ -1306,19 +1312,19 @@ public class Api {
             return String.valueOf(response_code);
         return null;
     }
-    
+
     //deprecated, use http://vk.com/dev/likes.add instead
     @Deprecated
     public Long wallAddLike(Long owner_id, Long post_id, String captcha_key, String captcha_sid) throws IOException, JSONException, KException{
         return addLike(owner_id, post_id, "post", null, captcha_key, captcha_sid);
     }
-    
+
     //deprecated, use http://vk.com/dev/likes.delete instead
     @Deprecated
     public Long wallDeleteLike(Long owner_id, Long post_id) throws IOException, JSONException, KException{
         return deleteLike(owner_id, "post", post_id, null, null);
     }
-    
+
     //http://vk.com/dev/likes.add
     public Long addLike(Long owner_id, Long item_id, String type, String access_key, String captcha_key, String captcha_sid) throws IOException, JSONException, KException{
         Params params = new Params("likes.add");
@@ -1332,7 +1338,7 @@ public class Api {
         long likes=response.optLong("likes", -1);
         return likes;
     }
-    
+
     //http://vk.com/dev/likes.delete
     public Long deleteLike(Long owner_id, String type, Long item_id, String captcha_key, String captcha_sid) throws IOException, JSONException, KException{
         Params params = new Params("likes.delete");
@@ -1344,7 +1350,7 @@ public class Api {
         JSONObject response = root.optJSONObject("response");
         return response.optLong("likes", -1);
     }
-    
+
     //http://vk.com/dev/photos.getById
     public ArrayList<Photo> getPhotosById(String photos, Integer extended, Integer photo_sizes) throws IOException, JSONException, KException{
         Params params = new Params("photos.getById");
@@ -1358,7 +1364,7 @@ public class Api {
         ArrayList<Photo> photos1 = parsePhotos(response);
         return photos1;
     }
-    
+
     public Photo getPhotoCountsByIdWithExecute(String photo, boolean get_user_id) throws IOException, JSONException, KException {
         String b = (get_user_id) ? ",\"user_id\":p@.user_id" : "";
         String code = "var p=API.photos.getById({\"photos\":\"" + photo + "\",\"extended\":1}); return {\"pid\":p@.id,\"likes\":p@.likes,\"comments\":p@.comments,\"can_comment\":p@.can_comment,\"tags\":p@.tags" + b + "};";
@@ -1369,8 +1375,8 @@ public class Api {
         if (array == null)
             return null;
         return Photo.parseCounts(array);
-    }    
-    
+    }
+
     //http://vk.com/dev/groups.get
     public ArrayList<Group> getUserGroups(Long user_id) throws IOException, JSONException, KException{
         Params params = new Params("groups.get");
@@ -1396,7 +1402,7 @@ public class Api {
         int response = root.optInt("response");
         return response==1;
     }
-    
+
     //http://vk.com/dev/wall.deleteComment
     public Boolean deleteWallComment(Long wall_owner_id, long comment_id) throws IOException, JSONException, KException {
         Params params = new Params("wall.deleteComment");
@@ -1406,7 +1412,7 @@ public class Api {
         int response = root.optInt("response");
         return response==1;
     }
-    
+
     //http://vk.com/dev/notes.deleteComment
     public Boolean deleteNoteComment(Long note_owner_id, long comment_id) throws IOException, JSONException, KException {
         Params params = new Params("notes.deleteComment");
@@ -1416,7 +1422,7 @@ public class Api {
         int response = root.optInt("response");
         return response==1;
     }
-    
+
     //http://vk.com/dev/video.deleteComment
     public Boolean deleteVideoComment(Long video_owner_id, long comment_id) throws IOException, JSONException, KException {
         Params params = new Params("video.deleteComment");
@@ -1426,7 +1432,7 @@ public class Api {
         int response = root.optInt("response");
         return response==1;
     }
-    
+
     //http://vk.com/dev/photos.deleteComment
     public Boolean deletePhotoComment(long photo_id, Long photo_owner_id, long comment_id) throws IOException, JSONException, KException {
         Params params = new Params("photos.deleteComment");
@@ -1437,7 +1443,7 @@ public class Api {
         int response = root.optInt("response");
         return response==1;
     }
-    
+
     //http://vk.com/dev/video.search
     public ArrayList<Video> searchVideo(String q, String sort, String hd, Long count, Long offset, Integer adult, String filters) throws IOException, JSONException, KException {
         Params params = new Params("video.search");
@@ -1461,13 +1467,13 @@ public class Api {
         }
         return videoss;
     }
-    
+
     //http://vk.com/dev/users.search
     public ArrayList<User> searchUser(String q, String fields, Long count, Long offset, Integer sort,
-            Integer city, Integer country, String hometown, Integer university_country, Integer university, Integer university_year,
-            Integer sex, Integer status, Integer age_from, Integer age_to, Integer birth_day, Integer birth_month, Integer birth_year,
-            Integer online, Integer has_photo, Integer school_country, Integer school_city, Integer school, Integer school_year, 
-            String religion, String interests, String company, String position, Long gid) throws IOException, JSONException, KException {
+                                      Integer city, Integer country, String hometown, Integer university_country, Integer university, Integer university_year,
+                                      Integer sex, Integer status, Integer age_from, Integer age_to, Integer birth_day, Integer birth_month, Integer birth_year,
+                                      Integer online, Integer has_photo, Integer school_country, Integer school_city, Integer school, Integer school_year,
+                                      String religion, String interests, String company, String position, Long gid) throws IOException, JSONException, KException {
         Params params = new Params("users.search");
         params.put("q", q);
         params.put("count", count);
@@ -1528,12 +1534,12 @@ public class Api {
         JSONArray array=response.optJSONArray("items");
         return User.parseUsers(array);
     }
-    
+
     public ArrayList<User> searchUserExtended(String q, String fields, Long count, Long offset, Integer sort,
-            Integer city, Integer country, String hometown, Integer university_country, Integer university, Integer university_year,
-            Integer sex, Integer status, Integer age_from, Integer age_to, Integer birth_day, Integer birth_month, Integer birth_year,
-            Integer online, Integer has_photo, Integer school_country, Integer school_city, Integer school, Integer school_year, 
-            String religion, String interests, String company, String position, Long gid) throws IOException, JSONException, KException {
+                                              Integer city, Integer country, String hometown, Integer university_country, Integer university, Integer university_year,
+                                              Integer sex, Integer status, Integer age_from, Integer age_to, Integer birth_day, Integer birth_month, Integer birth_year,
+                                              Integer online, Integer has_photo, Integer school_country, Integer school_city, Integer school, Integer school_year,
+                                              String religion, String interests, String company, String position, Long gid) throws IOException, JSONException, KException {
         String uids = Utils.parseProfileId(q);
         if (uids != null && uids.length() > 0 && (offset == null || offset == 0)) {
             Log.i(TAG, "Search with uid = " + uids);
@@ -1546,10 +1552,10 @@ public class Api {
             JSONArray array=root.optJSONArray("response");
             return User.parseUsers(array);
         } else
-            return searchUser(q, fields, count, offset, sort, 
-                    city, country, hometown, university_country, university, university_year, 
-                    sex, status, age_from, age_to, birth_day, birth_month, birth_year, 
-                    online, has_photo, school_country, school_city, school, school_year, 
+            return searchUser(q, fields, count, offset, sort,
+                    city, country, hometown, university_country, university, university_year,
+                    sex, status, age_from, age_to, birth_day, birth_month, birth_year,
+                    online, has_photo, school_country, school_city, school, school_year,
                     religion, interests, company, position, gid);
     }
 
@@ -1588,7 +1594,7 @@ public class Api {
         long note_id = root.getLong("response");
         return note_id;
     }
-    
+
     //http://vk.com/dev/messages.getLongPollServer
     public Object[] getLongPollServer(String captcha_key, String captcha_sid) throws IOException, JSONException, KException{
         Params params = new Params("messages.getLongPollServer");
@@ -1600,14 +1606,14 @@ public class Api {
         Long ts = response.getLong("ts");
         return new Object[]{key, server, ts};
     }
-    
+
     //http://vk.com/dev/account.setOnline
     public void setOnline(String captcha_key, String captcha_sid) throws IOException, JSONException, KException{
         Params params = new Params("account.setOnline");
         addCaptchaParams(captcha_key, captcha_sid, params);
         sendRequest(params);
     }
-    
+
     //http://vk.com/dev/friends.add
     public long addFriend(Long uid, String text, String captcha_key, String captcha_sid) throws IOException, JSONException, KException{
         Params params = new Params("friends.add");
@@ -1617,7 +1623,7 @@ public class Api {
         JSONObject root = sendRequest(params);
         return root.optLong("response");
     }
-    
+
     //http://vk.com/dev/friends.delete
     public long deleteFriend(Long uid) throws IOException, JSONException, KException{
         Params params = new Params("friends.delete");
@@ -1625,7 +1631,7 @@ public class Api {
         JSONObject root = sendRequest(params);
         return root.optLong("response");
     }
-    
+
     //http://vk.com/dev/friends.getRequests
     public ArrayList<Object[]> getRequestsFriends(Integer out) throws IOException, JSONException, KException{
         Params params = new Params("friends.getRequests");
@@ -1652,7 +1658,7 @@ public class Api {
         }
         return users;
     }
-    
+
     //http://vk.com/dev/users.getSubscriptions
     public ArrayList<Long> getSubscriptions(Long uid, int offset, int count, Integer extended) throws IOException, JSONException, KException{
         Params params = new Params("users.getSubscriptions");
@@ -1705,14 +1711,14 @@ public class Api {
         JSONObject root = sendRequest(params);
         return root.getInt("response");
     }
-    
+
     //http://vk.com/dev/execute
     public void execute(String code) throws IOException, JSONException, KException {
         Params params = new Params("execute");
         params.put("code", code);
         sendRequest(params);
     }
-    
+
     //http://vk.com/dev/photos.delete
     public boolean deletePhoto(Long owner_id, Long photo_id) throws IOException, JSONException, KException{
         Params params = new Params("photos.delete");
@@ -1734,7 +1740,7 @@ public class Api {
         JSONObject response = root.getJSONObject("response");
         return VkPoll.parse(response);
     }
-    
+
     //http://vk.com/dev/polls.addVote
     public int addPollVote(long poll_id, long answer_id, long owner_id, long topic_id, String captcha_key, String captcha_sid) throws JSONException, IOException, KException {
         Params params = new Params("polls.addVote");
@@ -1759,7 +1765,7 @@ public class Api {
         JSONObject root = sendRequest(params);
         return root.getInt("response");
     }
-    
+
     //http://vk.com/dev/polls.getVoters
     public ArrayList<User> getPollVoters(long poll_id, long owner_id, Collection<Long> answer_ids, Long count, Long offset, String fields, long topic_id) throws JSONException, IOException, KException {
         Params params = new Params("polls.getVoters");
@@ -1779,7 +1785,7 @@ public class Api {
         //TODO for others answer_ids
         return User.parseUsers(array);
     }
-    
+
     //http://vk.com/dev/friends.getLists
     public ArrayList<FriendsList> friendsLists() throws JSONException, IOException, KException {
         Params params = new Params("friends.getLists");
@@ -1795,7 +1801,7 @@ public class Api {
         }
         return result;
     }
-    
+
     //http://vk.com/dev/video.save
     public String saveVideo(String name, String description, Long gid, int privacy_view, int privacy_comment) throws IOException, JSONException, KException {
         Params params = new Params("video.save");
@@ -1810,7 +1816,7 @@ public class Api {
         JSONObject response = root.getJSONObject("response");
         return response.getString("upload_url");
     }
-    
+
     //http://vk.com/dev/photos.deleteAlbum
     public String deleteAlbum(Long aid, Long gid) throws IOException, JSONException, KException{
         Params params = new Params("photos.deleteAlbum");
@@ -1822,7 +1828,7 @@ public class Api {
             return String.valueOf(response_code);
         return null;
     }
-    
+
     //http://vk.com/dev/photos.getTags
     public ArrayList<PhotoTag> getPhotoTagsById(Long pid, Long owner_id) throws IOException, JSONException, KException{
         Params params = new Params("photos.getTags");
@@ -1831,14 +1837,14 @@ public class Api {
         JSONObject root = sendRequest(params);
         JSONArray array=root.optJSONArray("response");
         if (array == null)
-            return new ArrayList<PhotoTag>(); 
+            return new ArrayList<PhotoTag>();
         ArrayList<PhotoTag> photo_tags = parsePhotoTags(array, pid, owner_id);
         return photo_tags;
     }
-    
+
     private ArrayList<PhotoTag> parsePhotoTags(JSONArray array, Long pid, Long owner_id) throws JSONException {
-        ArrayList<PhotoTag> photo_tags=new ArrayList<PhotoTag>(); 
-        int category_count=array.length(); 
+        ArrayList<PhotoTag> photo_tags=new ArrayList<PhotoTag>();
+        int category_count=array.length();
         for(int i=0; i<category_count; ++i){
             JSONObject o = (JSONObject)array.get(i);
             PhotoTag p = PhotoTag.parse(o);
@@ -1850,7 +1856,7 @@ public class Api {
         }
         return photo_tags;
     }
-    
+
     //http://vk.com/dev/photos.putTag
     public String putPhotoTag(PhotoTag ptag, String captcha_key, String captcha_sid) throws IOException, JSONException, KException {
         if (ptag == null)
@@ -1870,7 +1876,7 @@ public class Api {
             return String.valueOf(response_code);
         return null;
     }
-    
+
     /*** topics region ***/
     //http://vk.com/dev/board.getTopics
     public ArrayList<GroupTopic> getGroupTopics(long gid, Integer order, int extended, int count, int offset) throws IOException, JSONException, KException {
@@ -1899,7 +1905,7 @@ public class Api {
         }
         return result;
     }
-    
+
     //http://vk.com/dev/board.getComments
     public CommentList getGroupTopicComments(long gid, long tid, int photo_sizes, int extended, int count, int offset, boolean reverse_order) throws IOException, JSONException, KException{
         Params params = new Params("board.getComments");
@@ -1928,7 +1934,7 @@ public class Api {
                 Comment c = Comment.parseTopicComment(o);
                 result.comments.add(c);
             }
-            
+
             //topic poll parsed separately
             if(offset==0){
                 JSONObject poll_json=response.optJSONObject("poll");
@@ -1945,7 +1951,7 @@ public class Api {
         }
         return result;
     }
-    
+
     //http://vk.com/dev/board.addComment
     public long createGroupTopicComment(long gid, long tid, String text, Collection<String> attachments, boolean from_group, String captcha_key, String captcha_sid) throws IOException, JSONException, KException {
         Params params = new Params("board.addComment");
@@ -1960,7 +1966,7 @@ public class Api {
         long message_id = root.optLong("response");
         return message_id;
     }
-    
+
     //http://vk.com/dev/board.editComment
     public boolean editGroupTopicComment(long cid, long gid, long tid, String text, Collection<String> attachments, String captcha_key, String captcha_sid) throws IOException, JSONException, KException {
         Params params = new Params("board.editComment");
@@ -1974,7 +1980,7 @@ public class Api {
         int response = root.optInt("response");
         return response == 1;
     }
-    
+
     //http://vk.com/dev/board.deleteComment
     public Boolean deleteGroupTopicComment(long gid, long tid, long cid) throws IOException, JSONException, KException {
         Params params = new Params("board.deleteComment");
@@ -1985,7 +1991,7 @@ public class Api {
         int response = root.optInt("response");
         return response==1;
     }
-    
+
     //http://vk.com/dev/board.addTopic
     public long createGroupTopic(long gid, String title, String text, boolean from_group, String captcha_key, String captcha_sid) throws IOException, JSONException, KException {
         Params params = new Params("board.addTopic");
@@ -1999,7 +2005,7 @@ public class Api {
         long topic_id = root.optLong("response");
         return topic_id;
     }
-    
+
     //http://vk.com/dev/board.deleteTopic
     public Boolean deleteGroupTopic(long gid, long tid) throws IOException, JSONException, KException {
         Params params = new Params("board.deleteTopic");
@@ -2010,7 +2016,7 @@ public class Api {
         return response==1;
     }
     /*** end topics region ***/
-    
+
     //http://vk.com/dev/groups.getById
     public ArrayList<Group> getGroups(Collection<Long> uids, String domain, String fields) throws IOException, JSONException, KException{
         if (uids == null && domain == null)
@@ -2041,7 +2047,7 @@ public class Api {
             return String.valueOf(response_code);
         return null;
     }
-    
+
     //http://vk.com/dev/groups.leave
     public String leaveGroup(long gid) throws IOException, JSONException, KException {
         Params params = new Params("groups.leave");
@@ -2052,7 +2058,7 @@ public class Api {
             return String.valueOf(response_code);
         return null;
     }
-    
+
     //http://vk.com/dev/groups.search
     public ArrayList<Group> searchGroup(String q, Long count, Long offset) throws IOException, JSONException, KException {
         Params params = new Params("groups.search");
@@ -2062,14 +2068,14 @@ public class Api {
         JSONObject root = sendRequest(params);
         JSONObject response=root.optJSONObject("response");
         JSONArray array=response.optJSONArray("items");
-        ArrayList<Group> groups = new ArrayList<Group>();  
+        ArrayList<Group> groups = new ArrayList<Group>();
         //if there are no groups "response" will not be array
         if (array==null)
             return groups;
         groups = Group.parseGroups(array);
         return groups;
     }
-    
+
     //http://vk.com/dev/account.registerDevice
     public String registerDevice(String token, String device_model, String system_version, Integer no_text, String subscribe)
             throws IOException, JSONException, KException {
@@ -2083,7 +2089,7 @@ public class Api {
         JSONObject root = sendRequest(params);
         return root.getString("response");
     }
-    
+
     //http://vk.com/dev/account.unregisterDevice
     public String unregisterDevice(String token) throws IOException, JSONException, KException {
         Params params = new Params("account.unregisterDevice");
@@ -2091,7 +2097,7 @@ public class Api {
         JSONObject root = sendRequest(params);
         return root.getString("response");
     }
-    
+
     //http://vk.com/dev/notifications.get
     public Notifications getNotifications(String filters, Long start_time, Long end_time, Integer offset, Integer count) throws IOException, JSONException, KException {
         Params params = new Params("notifications.get");
@@ -2104,7 +2110,7 @@ public class Api {
         JSONObject response = root.optJSONObject("response");
         return Notifications.parse(response);
     }
-    
+
     //http://vk.com/dev/messages.getById
     public ArrayList<Message> getMessagesById(ArrayList<Long> message_ids) throws IOException, JSONException, KException{
         Params params = new Params("messages.getById");
@@ -2115,7 +2121,7 @@ public class Api {
         ArrayList<Message> messages = parseMessages(array, false, 0, false, 0);
         return messages;
     }
-    
+
     //http://vk.com/dev/account.getCounters
     public Counters getCounters(String captcha_key, String captcha_sid) throws IOException, JSONException, KException {
         Params params = new Params("account.getCounters");
@@ -2124,7 +2130,7 @@ public class Api {
         JSONObject response=root.optJSONObject("response");
         return Counters.parse(response);
     }
-    
+
     /*** faves ***/
     //http://vk.com/dev/fave.getUsers
     public ArrayList<User> getFaveUsers(String fields, Integer count, Integer offset) throws IOException, JSONException, KException{
@@ -2146,7 +2152,7 @@ public class Api {
         }
         return users;
     }
-    
+
     //http://vk.com/dev/fave.getPhotos
     public ArrayList<Photo> getFavePhotos(Integer count, Integer offset) throws IOException, JSONException, KException {
         Params params = new Params("fave.getPhotos");
@@ -2156,11 +2162,11 @@ public class Api {
         JSONObject response=root.optJSONObject("response");
         JSONArray array=response.optJSONArray("items");
         if (array == null)
-            return new ArrayList<Photo>(); 
+            return new ArrayList<Photo>();
         ArrayList<Photo> photos = parsePhotos(array);
         return photos;
     }
-    
+
     //http://vk.com/dev/fave.getVideos
     public ArrayList<Video> getFaveVideos(Integer count, Integer offset) throws IOException, JSONException, KException {
         Params params = new Params("fave.getVideos");
@@ -2179,7 +2185,7 @@ public class Api {
         }
         return videos;
     }
-    
+
     //http://vk.com/dev/fave.getPosts
     public ArrayList<WallMessage> getFavePosts(Integer count, Integer offset) throws IOException, JSONException, KException{
         Params params = new Params("fave.getPosts");
@@ -2203,7 +2209,7 @@ public class Api {
         }
         return wmessages;
     }
-    
+
     //http://vk.com/dev/fave.getLinks
     public ArrayList<Link> getFaveLinks(Integer count, Integer offset) throws IOException, JSONException, KException{
         Params params = new Params("fave.getLinks");
@@ -2223,7 +2229,7 @@ public class Api {
         return groups;
     }
     /*** end faves  ***/
-    
+
     /*** chat methods ***/
     //http://vk.com/dev/messages.createChat
     public Long chatCreate(ArrayList<Long> uids, String title) throws IOException, JSONException, KException {
@@ -2238,7 +2244,7 @@ public class Api {
         JSONObject root = sendRequest(params);
         return root.optLong("response");
     }
-    
+
     //http://vk.com/dev/messages.editChat
     public Integer chatEdit(long chat_id, String title) throws IOException, JSONException, KException {
         Params params = new Params("messages.editChat");
@@ -2247,7 +2253,7 @@ public class Api {
         JSONObject root = sendRequest(params);
         return root.optInt("response");
     }
-    
+
     //http://vk.com/dev/messages.getChatUsers
     public ArrayList<User> getChatUsers(long chat_id, String fields) throws IOException, JSONException, KException {
         Params params = new Params("messages.getChatUsers");
@@ -2257,7 +2263,7 @@ public class Api {
         JSONArray array=root.optJSONArray("response");
         return User.parseUsers(array);
     }
-    
+
     //http://vk.com/dev/messages.addChatUser
     public Integer addUserToChat(long chat_id, long uid) throws IOException, JSONException, KException {
         Params params = new Params("messages.addChatUser");
@@ -2266,7 +2272,7 @@ public class Api {
         JSONObject root = sendRequest(params);
         return root.optInt("response");
     }
-    
+
     //http://vk.com/dev/messages.removeChatUser
     public Integer removeUserFromChat(long chat_id, long uid) throws IOException, JSONException, KException {
         Params params = new Params("messages.removeChatUser");
@@ -2276,7 +2282,7 @@ public class Api {
         return root.optInt("response");
     }
     /*** end chat methods ***/
-    
+
     //http://vk.com/dev/friends.getSuggestions
     public ArrayList<User> getSuggestions(String filter, String fields) throws IOException, JSONException, KException {
         Params params = new Params("friends.getSuggestions");
@@ -2286,7 +2292,7 @@ public class Api {
         JSONArray array=root.optJSONArray("response");
         return User.parseUsers(array);
     }
-    
+
     //http://vk.com/dev/account.importContacts
     public Integer importContacts(Collection<String> contacts) throws IOException, JSONException, KException    {
         Params params = new Params("account.importContacts");
@@ -2294,7 +2300,7 @@ public class Api {
         JSONObject root = sendRequest(params);
         return root.optInt("response");
     }
-    
+
     //http://vk.com/dev/friends.getByPhones
     public ArrayList<User> getFriendsByPhones(ArrayList<String> phones, String fields) throws IOException, JSONException, KException {
         Params params = new Params("friends.getByPhones");
@@ -2304,7 +2310,7 @@ public class Api {
         JSONArray array=root.optJSONArray("response");
         return User.parseUsersForGetByPhones(array);
     }
-    
+
     /*** methods for messages search ***/
     //http://vk.com/dev/messages.search
     public ArrayList<Message> searchMessages(String q, int offset, int count, Integer preview_length) throws IOException, JSONException, KException{
@@ -2319,7 +2325,7 @@ public class Api {
         ArrayList<Message> messages = parseMessages(array, false, 0, false, 0);
         return messages;
     }
-    
+
     //http://vk.com/dev/messages.searchDialogs
     public ArrayList<SearchDialogItem> searchDialogs(String q, String fields, Integer limit) throws IOException, JSONException, KException{
         Params params = new Params("messages.searchDialogs");
@@ -2330,7 +2336,7 @@ public class Api {
         JSONArray array=root.optJSONArray("response");
         return Message.parseSearchedDialogs(array);
     }
-    
+
     //http://vk.com/dev/messages.getLastActivity
     public LastActivity getLastActivity(long user_id) throws IOException, JSONException, KException{
         Params params = new Params("messages.getLastActivity");
@@ -2339,7 +2345,7 @@ public class Api {
         JSONObject response = root.optJSONObject("response");
         return LastActivity.parse(response);
     }
-    
+
     //http://vk.com/dev/groups.getMembers
     public ArrayList<Long> getGroupsMembers(long gid, Integer count, Integer offset, String sort) throws IOException, JSONException, KException {
         Params params = new Params("groups.getMembers");
@@ -2361,7 +2367,7 @@ public class Api {
         }
         return users;
     }
-    
+
     public ArrayList<User> getGroupsMembersWithExecute(long gid, Integer count, Integer offset, String sort, String fields) throws IOException, JSONException, KException {
         //String code = "return API.users.get({\"user_ids\":API.groups.getMembers({\"gid\":" + String.valueOf(gid) + ",\"count\":" + String.valueOf(count) + ",\"offset\":" + String.valueOf(offset) + ",\"sort\":\"id_asc\"}),\"fields\":\"" + fields + "\"});";
         String code = "var members=API.groups.getMembers({\"gid\":" + gid + "}); var u=members[1]; return API.users.get({\"user_ids\":u,\"fields\":\"" + fields + "\"});";
@@ -2371,14 +2377,14 @@ public class Api {
         JSONArray array=root.optJSONArray("response");
         return User.parseUsers(array);
     }
-    
+
     //http://vk.com/dev/utils.getServerTime
     public long getServerTime() throws IOException, JSONException, KException{
         Params params = new Params("utils.getServerTime");
         JSONObject root = sendRequest(params);
         return root.getLong("response");
     }
-    
+
     //http://vk.com/dev/audio.getAlbums
     public ArrayList<AudioAlbum> getAudioAlbums(Long owner_id, Integer offset, Integer count) throws IOException, JSONException, KException{
         Params params = new Params("audio.getAlbums");
@@ -2391,7 +2397,7 @@ public class Api {
         ArrayList<AudioAlbum> albums = AudioAlbum.parseAlbums(array);
         return albums;
     }
-    
+
     //http://vk.com/dev/audio.getRecommendations
     public ArrayList<Audio> getAudioRecommendations() throws IOException, JSONException, KException{
         Params params = new Params("audio.getRecommendations");
@@ -2399,7 +2405,7 @@ public class Api {
         JSONArray array=root.optJSONArray("response");
         return parseAudioList(array);
     }
-    
+
     //http://vk.com/dev/audio.getPopular
     public ArrayList<Audio> getAudioPopular() throws IOException, JSONException, KException{
         Params params = new Params("audio.getPopular");
@@ -2411,7 +2417,7 @@ public class Api {
         JSONArray array=root.optJSONArray("response");
         return parseAudioList(array);
     }
-    
+
     //http://vk.com/dev/video.getAlbums
     public ArrayList<AudioAlbum> getVideoAlbums(long owner_id, Integer offset, Integer count) throws IOException, JSONException, KException{
         Params params = new Params("video.getAlbums");
@@ -2424,7 +2430,7 @@ public class Api {
         ArrayList<AudioAlbum> albums = AudioAlbum.parseAlbums(array);
         return albums;
     }
-    
+
     //http://vk.com/dev/messages.setActivity
     public Integer setMessageActivity(Long uid, Long chat_id, boolean typing) throws IOException, JSONException, KException {
         Params params = new Params("messages.setActivity");
@@ -2435,7 +2441,7 @@ public class Api {
         JSONObject root = sendRequest(params);
         return root.optInt("response");
     }
-    
+
     //http://vk.com/dev/wall.edit
     public int editWallPost(long owner_id, long post_id, String text, Collection<String> attachments, String lat, String lon, long place_id, Long publish_date, String captcha_key, String captcha_sid) throws IOException, JSONException, KException{
         Params params = new Params("wall.edit");
@@ -2461,7 +2467,7 @@ public class Api {
         JSONObject root = sendRequest(params);
         return root.optInt("response");
     }
-    
+
     //http://vk.com/dev/docs.get
     public ArrayList<Document> getDocs(Long owner_id, Long count, Long offset) throws IOException, JSONException, KException {
         Params params = new Params("docs.get");
@@ -2473,7 +2479,7 @@ public class Api {
         JSONArray array=response.optJSONArray("items");
         return Document.parseDocs(array);
     }
-    
+
     //http://vk.com/dev/docs.getUploadServer
     public String docsGetUploadServer() throws IOException, JSONException, KException {
         Params params = new Params("docs.getUploadServer");
@@ -2481,7 +2487,7 @@ public class Api {
         JSONObject response = root.getJSONObject("response");
         return response.getString("upload_url");
     }
-    
+
     //http://vk.com/dev/docs.save
     public Document saveDoc(String file) throws IOException, JSONException, KException {
         Params params = new Params("docs.save");
@@ -2491,7 +2497,7 @@ public class Api {
         ArrayList<Document> docs = Document.parseDocs(array);
         return docs.get(0);
     }
-    
+
     //http://vk.com/dev/docs.delete
     public Boolean deleteDoc(Long doc_id, long owner_id) throws IOException, JSONException, KException {
         Params params = new Params("docs.delete");
@@ -2501,7 +2507,7 @@ public class Api {
         int response = root.optInt("response");
         return response==1;
     }
-    
+
     //http://vk.com/dev/notifications.markAsViewed
     public Boolean markNotificationsAsViewed() throws IOException, JSONException, KException {
         Params params = new Params("notifications.markAsViewed");
@@ -2509,7 +2515,7 @@ public class Api {
         int response = root.optInt("response");
         return response==1;
     }
-    
+
     //http://vk.com/dev/newsfeed.getBanned
     public BannArg getBanned(boolean is_extended, String fields) throws IOException, JSONException, KException {
         Params params = new Params("newsfeed.getBanned");
@@ -2520,7 +2526,7 @@ public class Api {
         JSONObject object = root.optJSONObject("response");
         return BannArg.parse(object, is_extended);
     }
-    
+
     //http://vk.com/dev/newsfeed.addBan
     public Boolean addBan(Collection<Long> uids, Collection<Long> gids) throws IOException, JSONException, KException {
         Params params = new Params("newsfeed.addBan");
@@ -2532,7 +2538,7 @@ public class Api {
         int response = root.optInt("response");
         return response==1;
     }
-    
+
     //http://vk.com/dev/newsfeed.deleteBan
     public Boolean deleteBan(Collection<Long> uids, Collection<Long> gids) throws IOException, JSONException, KException {
         Params params = new Params("newsfeed.deleteBan");
@@ -2544,7 +2550,7 @@ public class Api {
         int response = root.optInt("response");
         return response==1;
     }
-    
+
     //http://vk.com/dev/audio.getBroadcast
     //gets status of broadcasting user current audio to his page
     public boolean audioGetBroadcast() throws IOException, JSONException, KException {
@@ -2566,7 +2572,7 @@ public class Api {
         //нет необходимости парсить пока
         return true;
     }
-    
+
     //http://vk.com/dev/audio.addAlbum
     public Long addAudioAlbum(String title, Long gid) throws IOException, JSONException, KException {
         Params params = new Params("audio.addAlbum");
@@ -2576,7 +2582,7 @@ public class Api {
         JSONObject obj = root.getJSONObject("response");
         return obj.optLong("album_id");
     }
-    
+
     //http://vk.com/dev/audio.editAlbum
     public Integer editAudioAlbum(String title, long album_id, Long gid) throws IOException, JSONException, KException {
         Params params = new Params("audio.editAlbum");
@@ -2586,7 +2592,7 @@ public class Api {
         JSONObject root = sendRequest(params);
         return root.optInt("response");
     }
-    
+
     //http://vk.com/dev/audio.deleteAlbum
     public Integer deleteAudioAlbum(long album_id, Long gid) throws IOException, JSONException, KException {
         Params params = new Params("audio.deleteAlbum");
@@ -2595,7 +2601,7 @@ public class Api {
         JSONObject root = sendRequest(params);
         return root.optInt("response");
     }
-    
+
     //http://vk.com/dev/audio.moveToAlbum
     public Integer moveToAudioAlbum(Collection<Long> aids, long album_id, Long gid) throws IOException, JSONException, KException {
         Params params = new Params("audio.moveToAlbum");
@@ -2606,7 +2612,7 @@ public class Api {
         JSONObject root = sendRequest(params);
         return root.optInt("response");
     }
-    
+
     //http://vk.com/dev/wall.getById
     public ArrayList<WallMessage> getWallMessage(ArrayList<String> posts) throws IOException, JSONException, KException{
         Params params = new Params("wall.getById");
@@ -2622,7 +2628,7 @@ public class Api {
         }
         return wmessages;
     }
-    
+
     //http://vk.com/dev/newsfeed.unsubscribe
     public Integer newsfeedUnsubscribe(String type, Long owner_id, Long item_id) throws IOException, JSONException, KException {
         Params params = new Params("newsfeed.unsubscribe");
@@ -2632,7 +2638,7 @@ public class Api {
         JSONObject root = sendRequest(params);
         return root.optInt("response");
     }
-    
+
     //http://vk.com/dev/account.getBanned
     public ArrayList<User> getBlackList(Long offset, Long count) throws IOException, JSONException, KException {
         Params params = new Params("account.getBanned");
@@ -2645,7 +2651,7 @@ public class Api {
         JSONArray array=response.optJSONArray("items");
         return User.parseUsers(array);
     }
-    
+
     //http://vk.com/dev/account.banUser
     public Boolean addToBlackList(long uid) throws IOException, JSONException, KException {
         Params params = new Params("account.banUser");
@@ -2654,7 +2660,7 @@ public class Api {
         int response = root.optInt("response");
         return response==1;
     }
-    
+
     //http://vk.com/dev/account.unbanUser
     public Boolean deleteFromBlackList(long uid) throws IOException, JSONException, KException {
         Params params = new Params("account.unbanUser");
@@ -2663,7 +2669,7 @@ public class Api {
         int response = root.optInt("response");
         return response==1;
     }
-    
+
     //http://vk.com/dev/docs.add
     public Long docsAdd(long owner_id, long document_id, String access_key) throws IOException, JSONException, KException {
         Params params = new Params("docs.add");
@@ -2674,7 +2680,7 @@ public class Api {
         //returns new document_id
         return root.optLong("response");
     }
-    
+
     //http://vk.com/dev/newsfeed.search
     public Newsfeed searchNews(String q, String start_id, int extended, Long start_time, Long end_time, long count, Long offset, double latitude, double longitude, String captcha_key, String captcha_sid) throws IOException, JSONException, KException {
         Params params = new Params("newsfeed.search");
@@ -2694,7 +2700,7 @@ public class Api {
         JSONObject root = sendRequest(params);
         return Newsfeed.parseFromSearch(root);
     }
-    
+
     //http://vk.com/dev/groups.getBanned
     public ArrayList<GroupBanItem> getGroupBannedUsers(long group_id, Long offset, Long count) throws IOException, JSONException, KException {
         Params params = new Params("groups.getBanned");
@@ -2706,10 +2712,10 @@ public class Api {
         //
         JSONObject root = sendRequest(params);
         JSONObject response = root.optJSONObject("response");
-        JSONArray array = response.optJSONArray("items"); 
+        JSONArray array = response.optJSONArray("items");
         return GroupBanItem.parseAll(array);
     }
-    
+
     //http://vk.com/dev/groups.banUser
     public Boolean addGroupBanUser(long group_id, long user_id, Long end_date, Integer reason, String comment, boolean comment_visible) throws IOException, JSONException, KException {
         Params params = new Params("groups.banUser");
@@ -2724,7 +2730,7 @@ public class Api {
         int response = root.optInt("response");
         return response==1;
     }
-    
+
     //http://vk.com/dev/groups.unbanUser
     public Boolean deleteGroupBanUser(long group_id, long user_id) throws IOException, JSONException, KException {
         Params params = new Params("groups.unbanUser");
@@ -2734,7 +2740,7 @@ public class Api {
         int response = root.optInt("response");
         return response==1;
     }
-    
+
     //http://vk.com/dev/photos.copy
     public Long photoCopy(long owner_id, long photo_id, String access_key) throws IOException, JSONException, KException {
         Params params = new Params("photos.copy");
@@ -2745,7 +2751,7 @@ public class Api {
         Long response = root.optLong("response");
         return response;
     }
-    
+
     //http://vk.com/dev/account.setOffline
     public Long setOffline() throws IOException, JSONException, KException {
         Params params = new Params("account.setOffline");
@@ -2753,7 +2759,7 @@ public class Api {
         Long response = root.optLong("response");
         return response;
     }
-    
+
     //http://vk.com/dev/groups.getInvites
     public ArrayList<Group> getGroupsInvites(Long offset, Long count) throws IOException, JSONException, KException {
         Params params = new Params("groups.getInvites");
@@ -2769,7 +2775,7 @@ public class Api {
         groups = Group.parseGroups(array);
         return groups;
     }
-    
+
     //http://vk.com/dev/audio.edit 
     public Long editAudio(long owner_id, long audio_id, String artist, String title, String text, Integer genre_id, Integer no_search, String captcha_key, String captcha_sid) throws IOException, JSONException, KException {
         Params params = new Params("audio.edit");

@@ -10,6 +10,7 @@ public class Photo implements Serializable {
     private static final long serialVersionUID = 1L;
     public long pid;
     public long aid;
+    public String id;
     public String owner_id;
     public String src;//photo_130
     public String src_small;//photo_75
@@ -31,7 +32,7 @@ public class Photo implements Serializable {
 
     public static Photo parse(JSONObject o) throws NumberFormatException, JSONException{
         Photo p = new Photo();
-        p.pid = o.getLong("id");
+        p.pid = o.getLong("pid");
         p.aid = o.optLong("album_id");
         p.owner_id = o.getString("owner_id");
         p.src = o.optString("photo_130");
@@ -43,7 +44,8 @@ public class Photo implements Serializable {
         p.phototext = Api.unescape(o.optString("text"));
         p.created = o.optLong("date"); //date instead created for api v 5.0 and higher
         p.user_id = o.optString("user_id");
-        
+        p.id = o.optString("id");
+
         if (o.has("likes")) {
             JSONObject jlikes = o.getJSONObject("likes");
             p.like_count = jlikes.optInt("count");
